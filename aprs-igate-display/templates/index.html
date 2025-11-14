@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APRS iGate Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .callsign {
+            font-size: 1.3em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-box .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .packet-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .packet-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #1e3c72;
+        }
+
+        .packet-item .from {
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .packet-item .info {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .packet-item .time {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #152a52;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            background: #e9ecef;
+        }
+
+        .mode-btn.active {
+            background: #1e3c72;
+            color: white;
+            border-color: #1e3c72;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 APRS iGate Display</h1>
+            <div class="callsign">{{ config.station.callsign }}-{{ config.station.ssid }}</div>
+        </div>
+
+        <div class="warning">
+            ⚠️ <strong>Amateur Radio License Required:</strong> Operating an APRS iGate requires a valid amateur radio license.
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- Statistics Card -->
+        <div class="card">
+            <h2>📊 Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="label">Total Packets</div>
+                    <div class="value" id="total-packets">{{ stats.total_packets }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Unique Stations</div>
+                    <div class="value" id="unique-stations">{{ stats.unique_stations }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Packets/Hour</div>
+                    <div class="value" id="packets-hour">{{ stats.packets_per_hour }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Uptime</div>
+                    <div class="value" id="uptime">{{ stats.uptime_hours }}h</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">CPU</div>
+                    <div class="value" id="cpu-value">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Temp</div>
+                    <div class="value" id="temp-value">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display Mode Card -->
+        <div class="card">
+            <h2>🖥️ Display Mode</h2>
+            <div class="mode-selector">
+                <div class="mode-btn active" onclick="changeMode(0)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">📦</div>
+                    <div>Recent Packets</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(1)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">📈</div>
+                    <div>Statistics</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(2)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">🌤️</div>
+                    <div>Weather</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(3)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">💬</div>
+                    <div>Messages</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Packets Card -->
+        <div class="card">
+            <h2>📦 Recent Packets</h2>
+            <div class="packet-list" id="packet-list">
+                {% if packets|length > 0 %}
+                    {% for packet in packets %}
+                    <div class="packet-item">
+                        <div class="from">{{ packet.from }}</div>
+                        <div class="info">{{ packet.info }}</div>
+                        <div class="time">{{ packet.time }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: #999; padding: 20px;">No packets received yet</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Station Configuration Card -->
+        <div class="card">
+            <h2>⚙️ Station Configuration</h2>
+            <form id="station-form" onsubmit="saveConfig(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="callsign">Callsign</label>
+                        <input type="text" id="callsign" value="{{ config.station.callsign }}" placeholder="N0CALL" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ssid">SSID</label>
+                        <input type="number" id="ssid" value="{{ config.station.ssid }}" min="0" max="15" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="passcode">APRS-IS Passcode</label>
+                    <input type="number" id="passcode" value="{{ config.station.passcode }}" placeholder="12345" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="latitude">Latitude</label>
+                        <input type="number" id="latitude" value="{{ config.station.latitude }}" step="0.0001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="longitude">Longitude</label>
+                        <input type="number" id="longitude" value="{{ config.station.longitude }}" step="0.0001" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Save Configuration</button>
+            </form>
+        </div>
+
+        <!-- APRS-IS Configuration Card -->
+        <div class="card">
+            <h2>🌐 APRS-IS Configuration</h2>
+            <form id="aprs-form" onsubmit="saveConfig(event)">
+                <div class="form-group">
+                    <label for="server">APRS-IS Server</label>
+                    <input type="text" id="server" value="{{ config.aprs_is.server }}" placeholder="rotate.aprs2.net">
+                </div>
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number" id="port" value="{{ config.aprs_is.port }}" placeholder="14580">
+                </div>
+                <div class="form-group">
+                    <label for="filter">Filter (e.g., r/lat/lon/radius)</label>
+                    <input type="text" id="filter" value="{{ config.aprs_is.filter }}" placeholder="r/40.7128/-74.0060/50">
+                </div>
+                <button type="submit" class="btn">Save Configuration</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show message
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        // Change display mode
+        function changeMode(mode) {
+            // Update UI
+            document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === mode);
+            });
+
+            // Send to server
+            fetch('/api/change_mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: mode })
+            })
+            .then(response => response.json())
+            .then(data => showMessage(data.message, 'success'))
+            .catch(err => showMessage('Failed to change mode', 'error'));
+        }
+
+        // Refresh system status
+        function refreshStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-value').textContent = data.cpu_percent.toFixed(0) + '%';
+                    document.getElementById('temp-value').textContent = data.temperature ? data.temperature + '°C' : 'N/A';
+                })
+                .catch(err => console.error('Failed to fetch status'));
+        }
+
+        // Refresh packets
+        function refreshPackets() {
+            fetch('/api/packets')
+                .then(response => response.json())
+                .then(packets => {
+                    const list = document.getElementById('packet-list');
+                    if (packets.length === 0) {
+                        list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No packets received yet</p>';
+                        return;
+                    }
+
+                    list.innerHTML = packets.map(p => `
+                        <div class="packet-item">
+                            <div class="from">${p.from}</div>
+                            <div class="info">${p.info}</div>
+                            <div class="time">${p.time}</div>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => console.error('Failed to fetch packets'));
+        }
+
+        // Refresh statistics
+        function refreshStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(stats => {
+                    document.getElementById('total-packets').textContent = stats.total_packets;
+                    document.getElementById('unique-stations').textContent = stats.unique_stations;
+                    document.getElementById('packets-hour').textContent = stats.packets_per_hour;
+                    document.getElementById('uptime').textContent = stats.uptime_hours + 'h';
+                })
+                .catch(err => console.error('Failed to fetch stats'));
+        }
+
+        // Save configuration
+        function saveConfig(event) {
+            event.preventDefault();
+
+            const config = {
+                station: {
+                    callsign: document.getElementById('callsign').value.toUpperCase(),
+                    ssid: parseInt(document.getElementById('ssid').value),
+                    passcode: parseInt(document.getElementById('passcode').value),
+                    latitude: parseFloat(document.getElementById('latitude').value),
+                    longitude: parseFloat(document.getElementById('longitude').value),
+                    comment: 'Pwnagotchi iGate'
+                },
+                aprs_is: {
+                    server: document.getElementById('server').value,
+                    port: parseInt(document.getElementById('port').value),
+                    filter: document.getElementById('filter').value
+                },
+                display: {
+                    model: 'epd2in13_V2',
+                    rotation: 0,
+                    refresh_interval: 30,
+                    default_mode: 0
+                }
+            };
+
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage(data.message, 'success');
+                setTimeout(() => location.reload(), 2000);
+            })
+            .catch(err => showMessage('Failed to save configuration', 'error'));
+        }
+
+        // Initial updates
+        refreshStatus();
+        refreshPackets();
+        refreshStats();
+
+        // Periodic updates
+        setInterval(refreshStatus, 10000);
+        setInterval(refreshPackets, 5000);
+        setInterval(refreshStats, 10000);
+    </script>
+</body>
+</html>

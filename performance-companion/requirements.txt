@@ -2,6 +2,8 @@ python-osc>=1.8.0
 paho-mqtt>=1.6.1
 Pillow>=9.0.0
 python-rtmidi>=1.4.9
+Flask>=2.0.0
+psutil>=5.8.0
 # Add your specific Waveshare e-ink library
 # For example:
 # waveshare-epd==1.0.0

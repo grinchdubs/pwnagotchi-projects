@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Companion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #f5576c;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-box .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #f5576c;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        .btn {
+            background: #f5576c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn:hover { background: #e04658; }
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .mode-btn {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .mode-btn.active {
+            background: #f5576c;
+            color: white;
+            border-color: #f5576c;
+        }
+        .setlist-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #f5576c;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .message.success { background: #d4edda; color: #155724; }
+        .message.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Performance Companion</h1>
+            <p>Live Performance Control</p>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- System Status -->
+        <div class="card">
+            <h2>📊 Status</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">CPU</div>
+                    <div class="value" id="cpu-value">-</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Memory</div>
+                    <div class="value" id="memory-value">-</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Disk</div>
+                    <div class="value" id="disk-value">-</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Temp</div>
+                    <div class="value" id="temp-value">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display Mode -->
+        <div class="card">
+            <h2>🖥️ Display Mode</h2>
+            <div class="mode-selector">
+                <div class="mode-btn active" onclick="changeMode(0)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">📊</div>
+                    <div>Ableton Overview</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(1)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">🔊</div>
+                    <div>Audio Levels</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(2)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">🎨</div>
+                    <div>TD Parameters</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(3)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">📝</div>
+                    <div>Notes</div>
+                </div>
+                <div class="mode-btn" onclick="changeMode(4)">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">🎹</div>
+                    <div>MIDI Monitor</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Note -->
+        <div class="card">
+            <h2>📝 Send Note to Display</h2>
+            <div class="form-group">
+                <textarea id="note-text" rows="3" placeholder="Enter a note to display..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="sendNote()">Send Note</button>
+                <button class="btn" style="background: #6c757d;" onclick="clearNotes()">Clear Notes</button>
+            </div>
+        </div>
+
+        <!-- Set List -->
+        <div class="card">
+            <h2>🎵 Set List: {{ setlist.show_name }}</h2>
+            <div id="setlist-container">
+                {% if setlist.set_list|length > 0 %}
+                    {% for song in setlist.set_list %}
+                    <div class="setlist-item">
+                        <strong>{{ song.order }}. {{ song.song }}</strong>
+                        <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                            {{ song.bpm }} BPM | {{ song.duration_seconds }}s
+                        </div>
+                        {% if song.notes %}
+                        <div style="color: #999; font-size: 0.85em; margin-top: 5px;">
+                            💡 {{ song.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: #999; padding: 20px;">No set list loaded</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- OSC Configuration -->
+        <div class="card">
+            <h2>⚙️ OSC Configuration</h2>
+            <form onsubmit="saveConfig(event)">
+                <h3 style="margin-bottom: 15px; color: #666;">Ableton Live</h3>
+                <div class="form-group">
+                    <label><input type="checkbox" id="ableton-enabled" {% if config.sources.ableton.enabled %}checked{% endif %}> Enabled</label>
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="ableton-port" value="{{ config.sources.ableton.port }}">
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: #666;">TouchDesigner</h3>
+                <div class="form-group">
+                    <label><input type="checkbox" id="td-enabled" {% if config.sources.touchdesigner.enabled %}checked{% endif %}> Enabled</label>
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="td-port" value="{{ config.sources.touchdesigner.port }}">
+                </div>
+
+                <button type="submit" class="btn">Save Configuration</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        function changeMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === mode);
+            });
+            fetch('/api/change_mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: mode })
+            })
+            .then(response => response.json())
+            .then(data => showMessage(data.message, 'success'));
+        }
+
+        function sendNote() {
+            const note = document.getElementById('note-text').value;
+            if (!note) return;
+            fetch('/api/send_note', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: note })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage(data.message, 'success');
+                document.getElementById('note-text').value = '';
+            });
+        }
+
+        function clearNotes() {
+            fetch('/api/clear_notes', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => showMessage(data.message, 'success'));
+        }
+
+        function refreshStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-value').textContent = data.cpu_percent.toFixed(0) + '%';
+                    document.getElementById('memory-value').textContent = data.memory_percent.toFixed(0) + '%';
+                    document.getElementById('disk-value').textContent = data.disk_percent.toFixed(0) + '%';
+                    document.getElementById('temp-value').textContent = data.temperature ? data.temperature + '°C' : 'N/A';
+                });
+        }
+
+        function saveConfig(event) {
+            event.preventDefault();
+            const config = {
+                sources: {
+                    ableton: {
+                        enabled: document.getElementById('ableton-enabled').checked,
+                        method: 'osc',
+                        address: '0.0.0.0',
+                        port: parseInt(document.getElementById('ableton-port').value)
+                    },
+                    touchdesigner: {
+                        enabled: document.getElementById('td-enabled').checked,
+                        method: 'osc',
+                        address: '0.0.0.0',
+                        port: parseInt(document.getElementById('td-port').value)
+                    },
+                    mqtt: { enabled: false, broker: 'localhost', port: 1883, topics: ['performance/#'] }
+                },
+                display: { model: 'epd2in13_V2', rotation: 0, default_mode: 0, auto_rotate: false, refresh_rate: 2 }
+            };
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => showMessage(data.message, 'success'));
+        }
+
+        refreshStatus();
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>

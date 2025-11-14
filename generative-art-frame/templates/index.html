@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative Art Frame</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status-item .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .status-item .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-upload:hover {
+            background: #f8f9fa;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Generative Art Frame</h1>
+            <p>Control your e-ink display</p>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- Status Card -->
+        <div class="card">
+            <h2>📊 System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="label">CPU</div>
+                    <div class="value" id="cpu-value">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Memory</div>
+                    <div class="value" id="memory-value">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Disk</div>
+                    <div class="value" id="disk-value">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Temp</div>
+                    <div class="value" id="temp-value">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card">
+            <h2>⚡ Quick Actions</h2>
+            <div class="button-group">
+                <button class="btn" onclick="clearDisplay()">Clear Display</button>
+                <button class="btn btn-secondary" onclick="refreshStatus()">Refresh Status</button>
+            </div>
+        </div>
+
+        <!-- Upload Image Card -->
+        <div class="card">
+            <h2>🖼️ Upload Image</h2>
+            <div class="file-upload" onclick="document.getElementById('image-input').click()">
+                <input type="file" id="image-input" accept="image/*" onchange="uploadImage(this)">
+                <p style="font-size: 1.2em; margin-bottom: 10px;">📁 Click to select image</p>
+                <p style="color: #666;">Supports PNG, JPEG, GIF</p>
+            </div>
+        </div>
+
+        <!-- MQTT Configuration Card -->
+        <div class="card">
+            <h2>⚙️ MQTT Configuration</h2>
+            <form id="config-form" onsubmit="saveConfig(event)">
+                <div class="form-group">
+                    <label for="mqtt-broker">MQTT Broker</label>
+                    <input type="text" id="mqtt-broker" value="{{ config.mqtt.broker }}" placeholder="mqtt.local">
+                </div>
+                <div class="form-group">
+                    <label for="mqtt-port">MQTT Port</label>
+                    <input type="number" id="mqtt-port" value="{{ config.mqtt.port }}" placeholder="1883">
+                </div>
+                <div class="form-group">
+                    <label for="image-topic">Image Topic</label>
+                    <input type="text" id="image-topic" value="{{ config.mqtt.topics.image }}" placeholder="art/frame/image">
+                </div>
+                <button type="submit" class="btn">Save Configuration</button>
+            </form>
+        </div>
+
+        <!-- Display Settings Card -->
+        <div class="card">
+            <h2>🖥️ Display Settings</h2>
+            <form id="display-form" onsubmit="saveConfig(event)">
+                <div class="form-group">
+                    <label for="display-model">Display Model</label>
+                    <select id="display-model">
+                        <option value="epd2in13_V2" {% if config.display.model == 'epd2in13_V2' %}selected{% endif %}>2.13" V2 (250x122)</option>
+                        <option value="epd2in7" {% if config.display.model == 'epd2in7' %}selected{% endif %}>2.7" (264x176)</option>
+                        <option value="epd4in2" {% if config.display.model == 'epd4in2' %}selected{% endif %}>4.2" (400x300)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rotation">Rotation</label>
+                    <select id="rotation">
+                        <option value="0" {% if config.display.rotation == 0 %}selected{% endif %}>0°</option>
+                        <option value="90" {% if config.display.rotation == 90 %}selected{% endif %}>90°</option>
+                        <option value="180" {% if config.display.rotation == 180 %}selected{% endif %}>180°</option>
+                        <option value="270" {% if config.display.rotation == 270 %}selected{% endif %}>270°</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dither-method">Dither Method</label>
+                    <select id="dither-method">
+                        <option value="floyd-steinberg" {% if config.image_processing.dither_method == 'floyd-steinberg' %}selected{% endif %}>Floyd-Steinberg</option>
+                        <option value="bayer" {% if config.image_processing.dither_method == 'bayer' %}selected{% endif %}>Bayer</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Save Settings</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show message
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        // Refresh system status
+        function refreshStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-value').textContent = data.cpu_percent.toFixed(1) + '%';
+                    document.getElementById('memory-value').textContent = data.memory_percent.toFixed(1) + '%';
+                    document.getElementById('disk-value').textContent = data.disk_percent.toFixed(1) + '%';
+                    document.getElementById('temp-value').textContent = data.temperature ? data.temperature + '°C' : 'N/A';
+                })
+                .catch(err => showMessage('Failed to fetch status', 'error'));
+        }
+
+        // Clear display
+        function clearDisplay() {
+            fetch('/api/clear_display', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => showMessage(data.message, 'success'))
+                .catch(err => showMessage('Failed to clear display', 'error'));
+        }
+
+        // Upload image
+        function uploadImage(input) {
+            if (input.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('image', input.files[0]);
+
+            fetch('/api/upload_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage('Image uploaded: ' + (data.size / 1024).toFixed(1) + ' KB', 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(err => showMessage('Failed to upload image', 'error'));
+        }
+
+        // Save configuration
+        function saveConfig(event) {
+            event.preventDefault();
+
+            const config = {
+                mqtt: {
+                    broker: document.getElementById('mqtt-broker').value,
+                    port: parseInt(document.getElementById('mqtt-port').value),
+                    topics: {
+                        image: document.getElementById('image-topic').value,
+                        command: 'art/frame/command',
+                        status: 'art/frame/status'
+                    }
+                },
+                display: {
+                    model: document.getElementById('display-model').value,
+                    rotation: parseInt(document.getElementById('rotation').value),
+                    refresh_interval: 5
+                },
+                image_processing: {
+                    dither_method: document.getElementById('dither-method').value,
+                    contrast: 1.2,
+                    brightness: 1.0
+                }
+            };
+
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => showMessage(data.message, 'success'))
+            .catch(err => showMessage('Failed to save configuration', 'error'));
+        }
+
+        // Initial status update
+        refreshStatus();
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>
