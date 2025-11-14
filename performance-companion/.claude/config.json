@@ -1,0 +1,28 @@
+{
+  "project": {
+    "name": "Live Performance Companion",
+    "description": "A Raspberry Pi Zero W + e-ink display system showing real-time data from Ableton Live and TouchDesigner",
+    "type": "python",
+    "main_file": "main.py"
+  },
+  "context": {
+    "include": [
+      "*.py",
+      "*.json",
+      "*.md",
+      "requirements.txt"
+    ],
+    "exclude": [
+      "__pycache__",
+      "*.pyc",
+      ".git",
+      "venv",
+      "env"
+    ]
+  },
+  "integrations": {
+    "ableton": "OSC via Connection Kit or LiveOSC",
+    "touchdesigner": "Native OSC output",
+    "protocols": ["OSC", "MQTT", "MIDI"]
+  }
+}

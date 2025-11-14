@@ -180,21 +180,148 @@ dithered.save('test_dithered.png')
 - Cache dithering matrices
 - Consider PIL's native dithering methods for speed
 
-### TouchDesigner Integration Notes
+### TouchDesigner Integration
 
-TouchDesigner can send images via MQTT using:
-1. Export frame to file
-2. Convert to base64
-3. Publish via MQTT Out TOP or Python script
+## TouchDesigner Documentation Requirements
 
-Example TouchDesigner Python:
+**CRITICAL: When answering TouchDesigner questions, you MUST:**
+
+1. **Reference the TouchDesigner documentation** for accurate parameter names and API usage:
+   - Main UserGuide: https://derivative.ca/UserGuide
+   - Python API Documentation: https://derivative.ca/UserGuide/Category%3APython
+
+2. **Always Verify Parameter Names**
+   - **DO NOT guess** TouchDesigner parameter names or methods
+   - **ALWAYS check** the official documentation for exact parameter syntax
+   - **Common TouchDesigner objects** to reference:
+     - `op()` - Operator references
+     - `me` - Current operator context
+     - `parent()` - Parent component access
+     - Parameter syntax: `op.par.parametername`
+
+3. **Key TouchDesigner Python Classes to Reference:**
+   - `OP` class - Base operator class
+   - `COMP` class - Component operators
+   - `TOP` class - Texture operators
+   - `CHOP` class - Channel operators
+   - `DAT` class - Data operators
+
+4. **Parameter Access Patterns:**
+   ```python
+   # Correct parameter access patterns to verify in docs:
+   op.par.parameter_name.val          # Get parameter value
+   op.par.parameter_name = value       # Set parameter value
+   op.par.parameter_name.expr = "expr" # Set expression
+   ```
+
+### TouchDesigner Modern Python Features
+
+**IMPORTANT: TouchDesigner has introduced new Python libraries:**
+
+#### TDI Library (TouchDesigner Interface Library)
+- **Documentation:** https://docs.derivative.ca/TDI_Library
+- **Purpose:** Modern Python interface with improved type hints and IDE support
+- **When to use:** For new Python scripts that benefit from better autocomplete
+
+#### Thread Manager
+- **Documentation:** https://docs.derivative.ca/Thread_Manager
+- **Community Post:** https://derivative.ca/community-post/enhancing-your-python-toolbox-touchdesigner%E2%80%99s-thread-manager/72022
+- **Purpose:** Simplified multi-threading in TouchDesigner
+- **When to use:** For background tasks, parallel processing, non-blocking operations
+
+#### Python Environment Manager (tdPyEnvManager)
+- **Documentation:** https://docs.derivative.ca/Palette:tdPyEnvManager
+- **Community Post:** https://derivative.ca/community-post/introducing-touchdesigner-python-environment-manager-tdpyenvmanager/72024
+- **Purpose:** Manage Python packages and virtual environments
+- **When to use:** For installing external Python dependencies (like `paho-mqtt`)
+
+### Common TouchDesigner Pitfalls to Avoid
+
+- Guessing parameter names instead of looking them up
+- Using incorrect callback signatures
+- Mixing up operator reference syntax
+- Not handling TouchDesigner's frame-based execution model
+- **Pulse button callbacks**: Pulse parameters trigger `onPulse(par)`, NOT `onValueChange(par, prev)`
+- **Falsy parameter values**: Use `if par is not None:` instead of `if par:` because values like `0`, `""`, `False` are falsy
+- **Node sizing**: Use `op.nodeWidth` and `op.nodeHeight`, NOT `op.par.w` or `op.par.h`
+
+### Sending Images from TouchDesigner via MQTT
+
+TouchDesigner can send images to this e-ink display using MQTT:
+
+**Method 1: Using MQTT DAT (Recommended)**
 ```python
+# In a Timer CHOP callback or Execute DAT
+import base64
+
+# Get the render TOP
+render_top = op('render1')
+
+# Export as bytes (PNG or JPEG)
+img_bytes = render_top.save('temp.png')  # or use .save() to memory
+
+# Convert to base64
+img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+
+# Publish via MQTT DAT
+mqtt_dat = op('mqtt1')
+mqtt_dat.sendBytes('art/frame/image', img_base64.encode('utf-8'))
+```
+
+**Method 2: Using Python paho-mqtt**
+```python
+# Install paho-mqtt via tdPyEnvManager first
 import base64
 import paho.mqtt.client as mqtt
 
-# Convert TOP to bytes, base64 encode, publish
-# (Implementation details depend on TD version)
+# Get TOP pixel data
+render_top = op('render1')
+img_bytes = render_top.save('memory.png')  # Save to memory buffer
+
+# Convert to base64
+img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+
+# Publish
+client = mqtt.Client()
+client.connect('mqtt.broker.address', 1883)
+client.publish('art/frame/image', img_base64)
+client.disconnect()
 ```
+
+**Method 3: Using numpyArray for custom encoding**
+```python
+import numpy as np
+from PIL import Image
+import base64
+import io
+
+# Get pixel data as numpy array
+render_top = op('render1')
+img_array = render_top.numpyArray(delayed=False)
+# Returns shape (height, width, channels) as float32 (0.0-1.0)
+
+# Convert to uint8 and flip (TD is bottom-left origin)
+img_array = np.flipud(img_array)
+img_array = (img_array * 255).astype(np.uint8)
+
+# Convert to PIL Image
+img = Image.fromarray(img_array)
+
+# Encode to JPEG/PNG
+buffer = io.BytesIO()
+img.save(buffer, format='JPEG', quality=85)
+img_bytes = buffer.getvalue()
+
+# Base64 encode and publish
+img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+# ... publish via MQTT
+```
+
+**Performance Considerations:**
+- Use JPEG for faster encoding and smaller payload (better for MQTT)
+- Adjust quality parameter to balance size vs quality
+- Consider resizing image to e-ink display dimensions before encoding
+- Use Timer CHOP to control update rate (don't send faster than display can refresh)
 
 ### Future Enhancement Ideas
 

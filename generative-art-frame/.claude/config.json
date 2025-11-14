@@ -1,0 +1,23 @@
+{
+  "project": {
+    "name": "Generative Art Frame",
+    "description": "A Raspberry Pi Zero W + e-ink display system for displaying generative art from TouchDesigner/Hydra via MQTT",
+    "type": "python",
+    "main_file": "main.py"
+  },
+  "context": {
+    "include": [
+      "*.py",
+      "*.json",
+      "*.md",
+      "requirements.txt"
+    ],
+    "exclude": [
+      "__pycache__",
+      "*.pyc",
+      ".git",
+      "venv",
+      "env"
+    ]
+  }
+}

@@ -290,7 +290,72 @@ outlet(0, "/live/scene", scene.get("name"));
 
 ### TouchDesigner Integration
 
-#### OSC Out CHOP
+## TouchDesigner Documentation Requirements
+
+**CRITICAL: When answering TouchDesigner questions, you MUST:**
+
+1. **Reference the TouchDesigner documentation** for accurate parameter names and API usage:
+   - Main UserGuide: https://derivative.ca/UserGuide
+   - Python API Documentation: https://derivative.ca/UserGuide/Category%3APython
+
+2. **Always Verify Parameter Names**
+   - **DO NOT guess** TouchDesigner parameter names or methods
+   - **ALWAYS check** the official documentation for exact parameter syntax
+   - **Common TouchDesigner objects** to reference:
+     - `op()` - Operator references
+     - `me` - Current operator context
+     - `parent()` - Parent component access
+     - Parameter syntax: `op.par.parametername`
+
+3. **Key TouchDesigner Python Classes to Reference:**
+   - `OP` class - Base operator class
+   - `COMP` class - Component operators
+   - `TOP` class - Texture operators
+   - `CHOP` class - Channel operators
+   - `DAT` class - Data operators
+
+4. **Parameter Access Patterns:**
+   ```python
+   # Correct parameter access patterns to verify in docs:
+   op.par.parameter_name.val          # Get parameter value
+   op.par.parameter_name = value       # Set parameter value
+   op.par.parameter_name.expr = "expr" # Set expression
+   ```
+
+### TouchDesigner Modern Python Features
+
+**IMPORTANT: TouchDesigner has introduced new Python libraries:**
+
+#### TDI Library (TouchDesigner Interface Library)
+- **Documentation:** https://docs.derivative.ca/TDI_Library
+- **Purpose:** Modern Python interface with improved type hints and IDE support
+- **When to use:** For new Python scripts that benefit from better autocomplete
+
+#### Thread Manager
+- **Documentation:** https://docs.derivative.ca/Thread_Manager
+- **Community Post:** https://derivative.ca/community-post/enhancing-your-python-toolbox-touchdesigner%E2%80%99s-thread-manager/72022
+- **Purpose:** Simplified multi-threading in TouchDesigner
+- **When to use:** For background tasks, parallel processing, non-blocking operations
+
+#### Python Environment Manager (tdPyEnvManager)
+- **Documentation:** https://docs.derivative.ca/Palette:tdPyEnvManager
+- **Community Post:** https://derivative.ca/community-post/introducing-touchdesigner-python-environment-manager-tdpyenvmanager/72024
+- **Purpose:** Manage Python packages and virtual environments
+- **When to use:** For installing external Python dependencies (like `python-osc`)
+
+### Common TouchDesigner Pitfalls to Avoid
+
+- Guessing parameter names instead of looking them up
+- Using incorrect callback signatures
+- Mixing up operator reference syntax
+- Not handling TouchDesigner's frame-based execution model
+- **Pulse button callbacks**: Pulse parameters trigger `onPulse(par)`, NOT `onValueChange(par, prev)`
+- **Falsy parameter values**: Use `if par is not None:` instead of `if par:` because values like `0`, `""`, `False` are falsy
+- **Node sizing**: Use `op.nodeWidth` and `op.nodeHeight`, NOT `op.par.w` or `op.par.h`
+
+### Sending OSC from TouchDesigner
+
+#### OSC Out CHOP (Recommended for Performance Data)
 
 1. Add OSC Out CHOP to network
 2. Configure target IP (Pi Zero W) and port
@@ -302,19 +367,56 @@ custom_param1 → /td/param/blur
 custom_param2 → /td/param/feedback
 ```
 
-#### Python in TouchDesigner
+**Best Practices:**
+- Use constant CHOPs for static values
+- Use Timer CHOP for periodic updates
+- Set appropriate channel names to match OSC address structure
+- Configure update rate to match display refresh (2-5 seconds)
+
+#### Python in TouchDesigner (For Complex Logic)
 
 ```python
-# Send OSC from TouchDesigner Python
-import socket
+# Send OSC from TouchDesigner Python using python-osc library
+# Install via tdPyEnvManager first
 
-def send_osc(address, value):
-    # Implement OSC message formatting
-    # Send via UDP socket
-    pass
+from pythonosc import udp_client
 
-# In execute() or frameStart()
-send_osc('/td/fps', me.time.rate)
+# Create OSC client (once, store in project storage)
+client = udp_client.SimpleUDPClient('192.168.1.100', 9001)
+
+# In execute() callback or custom function
+def send_performance_data():
+    # Get current FPS
+    fps = me.time.rate
+    client.send_message('/td/fps', fps)
+
+    # Get custom parameter values
+    blur_val = op('blur_param').par.value0
+    client.send_message('/td/param/blur', blur_val)
+
+    # Get current composition name
+    comp_name = parent().name
+    client.send_message('/td/scene', comp_name)
+
+# Call from Timer CHOP callback
+# In Execute DAT with Timer CHOP:
+def onValueChange(channel, sampleIndex, val, prev):
+    if channel.name == 'trigger':
+        send_performance_data()
+```
+
+#### OSC Out DAT (For Text/String Data)
+
+```python
+# For sending text-based OSC messages
+osc_out_dat = op('oscout1')
+
+# Send scene name
+osc_out_dat.sendOSC('/td/scene', ['My Composition'])
+
+# Send multiple parameters
+osc_out_dat.sendOSC('/td/param/blur', [0.5])
+osc_out_dat.sendOSC('/td/param/feedback', [0.8])
 ```
 
 ### Set List Management
