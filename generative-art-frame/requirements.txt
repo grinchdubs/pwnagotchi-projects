@@ -1,0 +1,6 @@
+paho-mqtt>=1.6.1
+Pillow>=9.0.0
+numpy>=1.21.0
+# Add your specific Waveshare e-ink library
+# For example:
+# waveshare-epd==1.0.0

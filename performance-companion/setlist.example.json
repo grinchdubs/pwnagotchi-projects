@@ -1,0 +1,45 @@
+{
+  "set_list": [
+    {
+      "song": "Opening Track",
+      "bpm": 128,
+      "duration": 240,
+      "notes": "Start with visuals at 50%",
+      "scene": "Intro"
+    },
+    {
+      "song": "Build Up",
+      "bpm": 140,
+      "duration": 300,
+      "notes": "Increase visual intensity at 2:00",
+      "scene": "Build"
+    },
+    {
+      "song": "Peak",
+      "bpm": 145,
+      "duration": 360,
+      "notes": "Full visuals, check audio levels",
+      "scene": "Peak"
+    },
+    {
+      "song": "Breakdown",
+      "bpm": 120,
+      "duration": 240,
+      "notes": "Ambient visuals, reduce bass",
+      "scene": "Ambient"
+    },
+    {
+      "song": "Finale",
+      "bpm": 150,
+      "duration": 420,
+      "notes": "All systems go, prepare for end",
+      "scene": "Finale"
+    }
+  ],
+  "performance_notes": [
+    "Check all MIDI connections during soundcheck",
+    "TouchDesigner frame rate should stay above 30 FPS",
+    "Monitor audio levels on companion display",
+    "Have backup visuals ready for technical issues"
+  ]
+}

@@ -1,0 +1,5 @@
+aprslib>=0.7.0
+Pillow>=9.0.0
+# Add your specific Waveshare e-ink library
+# For example:
+# waveshare-epd==1.0.0

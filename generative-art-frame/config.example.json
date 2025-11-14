@@ -1,0 +1,22 @@
+{
+  "mqtt": {
+    "broker": "localhost",
+    "port": 1883,
+    "topics": {
+      "image": "art/frame/image",
+      "command": "art/frame/command",
+      "status": "art/frame/status"
+    }
+  },
+  "display": {
+    "model": "epd2in13_V2",
+    "rotation": 0,
+    "width": 250,
+    "height": 122
+  },
+  "processing": {
+    "dither_method": "floyd-steinberg",
+    "resize_mode": "contain",
+    "refresh_interval": 30
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "station": {
+    "callsign": "N0CALL",
+    "ssid": "10",
+    "passcode": "-1",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "comment": "Pwnagotchi APRS iGate"
+  },
+  "aprs_is": {
+    "servers": ["rotate.aprs2.net:14580"],
+    "filter": "r/40.7128/-74.0060/50"
+  },
+  "display": {
+    "model": "epd2in13_V2",
+    "rotation": 0,
+    "width": 250,
+    "height": 122,
+    "refresh_interval": 30,
+    "auto_rotate_modes": true,
+    "mode_duration": 60
+  }
+}
